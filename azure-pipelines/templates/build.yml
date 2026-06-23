@@ -1,0 +1,60 @@
+steps:
+- task: UseDotNet@2
+  inputs:
+    packageType: 'sdk'
+    version: '8.0.x'
+
+- task: DotNetCoreCLI@2
+  displayName: 'Restore'
+  inputs:
+    command: 'restore'
+    projects: |
+      sample-app/sample-app.csproj
+      sample-app.Tests/sample-app.Tests.csproj
+
+- task: DotNetCoreCLI@2
+  displayName: 'Run unit tests'
+  inputs:
+    command: 'test'
+    projects: 'sample-app.Tests/sample-app.Tests.csproj'
+    arguments: '--configuration Release --no-restore --logger trx --results-directory $(Build.ArtifactStagingDirectory)/TestResults'
+
+- task: DotNetCoreCLI@2
+  displayName: 'Build'
+  inputs:
+    command: 'build'
+    projects: 'sample-app/sample-app.csproj'
+    arguments: '--configuration Release --no-restore'
+
+- task: DotNetCoreCLI@2
+  displayName: 'Publish'
+  inputs:
+    command: 'publish'
+    publishWebProjects: false
+    projects: 'sample-app/sample-app.csproj'
+    arguments: '--configuration Release --output $(Build.ArtifactStagingDirectory)/publish'
+    zipAfterPublish: false
+
+- task: Docker@2
+  displayName: 'Build and push image'
+  inputs:
+    command: buildAndPush
+    repository: '$(containerRegistry)/$(imageName)'
+    dockerfile: '$(dockerfilePath)'
+    containerRegistry: '$(containerRegistryServiceConnection)'
+    tags: |
+      $(imageTag)
+
+- task: Bash@3
+  displayName: 'Scan container image'
+  inputs:
+    targetType: 'inline'
+    script: |
+      echo "Scanning image $(containerRegistry)/$(imageName):$(imageTag)"
+      docker scan $(containerRegistry)/$(imageName):$(imageTag) --accept-license || true
+
+- task: PublishPipelineArtifact@1
+  inputs:
+    targetPath: '$(Build.ArtifactStagingDirectory)/publish'
+    artifact: '$(artifactName)'
+    publishLocation: 'pipeline'

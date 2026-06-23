@@ -1,0 +1,80 @@
+trigger:
+  branches:
+    include:
+      - main
+      - develop
+
+variables:
+- group: 'sample-app-variables' # Create this variable group in Azure DevOps project settings
+- template: azure-pipelines/templates/variables.yml
+
+stages:
+- stage: Build
+  displayName: Build, Test, and Publish
+  jobs:
+  - job: Build
+    displayName: Build
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - template: azure-pipelines/templates/versioning.yml
+      parameters:
+        versionPrefix: '1.0'
+    - template: azure-pipelines/templates/build.yml
+
+- stage: DeployDev
+  displayName: Deploy to Dev
+  dependsOn: Build
+  condition: succeeded()
+  jobs:
+  - deployment: DeployDev
+    displayName: Deploy to Dev
+    environment: 'dev'
+    pool:
+      vmImage: 'ubuntu-latest'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - template: azure-pipelines/templates/deploy.yml
+            parameters:
+              environmentName: 'dev'
+              namespace: 'dev'
+
+- stage: DeployStage
+  displayName: Deploy to Stage
+  dependsOn: DeployDev
+  condition: succeeded()
+  jobs:
+  - deployment: DeployStage
+    displayName: Deploy to Stage
+    environment: 'stage'
+    pool:
+      vmImage: 'ubuntu-latest'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - template: azure-pipelines/templates/deploy.yml
+            parameters:
+              environmentName: 'stage'
+              namespace: 'stage'
+
+- stage: DeployProd
+  displayName: Deploy to Prod
+  dependsOn: DeployStage
+  condition: succeeded()
+  jobs:
+  - deployment: DeployProd
+    displayName: Deploy to Prod
+    environment: 'prod'
+    pool:
+      vmImage: 'ubuntu-latest'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - template: azure-pipelines/templates/deploy.yml
+            parameters:
+              environmentName: 'prod'
+              namespace: 'prod'

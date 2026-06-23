@@ -1,0 +1,15 @@
+variables:
+  - name: imageName
+    value: 'sample-app'
+  - name: dockerfilePath
+    value: 'sample-app/Dockerfile'
+  - name: containerRegistry
+    value: 'myregistry.azurecr.io' # replace with your ACR
+  - name: containerRegistryServiceConnection
+    value: 'ACR-ServiceConnection' # create this in Azure DevOps
+  - name: kubernetesServiceConnection
+    value: 'K8s-ServiceConnection' # create this in Azure DevOps
+  - name: artifactName
+    value: 'sample-app-artifact'
+  - name: versionPrefix
+    value: '1.0'

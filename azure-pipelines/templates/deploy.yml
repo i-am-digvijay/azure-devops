@@ -1,0 +1,22 @@
+parameters:
+  - name: environmentName
+    type: string
+  - name: namespace
+    type: string
+
+steps:
+- task: VariableSubstitution@0
+  displayName: 'Substitute variables in kubernetes manifest'
+  inputs:
+    action: 'substitute'
+    targetFiles: 'k8s/kubernetes.yml'
+
+- task: Kubectl@1
+  displayName: 'Apply kubernetes manifest'
+  inputs:
+    connectionType: 'Kubernetes Service Connection'
+    kubernetesServiceConnection: '$(kubernetesServiceConnection)'
+    namespace: '${{ parameters.namespace }}'
+    command: 'apply'
+    useConfigurationFile: true
+    configuration: 'k8s/kubernetes.yml'
