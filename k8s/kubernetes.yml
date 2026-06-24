@@ -13,6 +13,15 @@ spec:
       labels:
         app: sample-app
     spec:
+      # Schedule pods onto nodes in the labeled node pool (example: nodepool=blue)
+      nodeSelector:
+        nodepool: blue
+      # Allow pods to be scheduled on nodes that are tainted (example taint: dedicated=blue:NoSchedule)
+      tolerations:
+        - key: "dedicated"
+          operator: "Equal"
+          value: "blue"
+          effect: "NoSchedule"
       containers:
         - name: sample-app
           image: $(containerRegistry)/$(imageName):$(imageTag)
